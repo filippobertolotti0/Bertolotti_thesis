@@ -1,0 +1,7 @@
+cartpole_pendulum/
+d3rlpy_logs/
+datasets/
+energym/
+trained_models/
+training_lenght_gridsearch/
+docs/
