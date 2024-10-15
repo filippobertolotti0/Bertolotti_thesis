@@ -58,7 +58,7 @@ class SimpleHouseRad(gym.Env):
     def reset(self, weather=None, options=None, seed=None):
         if weather is not None:
             self.weather = weather
-        self.env = energym.make('SwissHouseRSlaW2W-v0', weather=self.weather, start_day=self.start_day, start_month=self.start_month, simulation_days=365, eval_mode=self.eval_mode)
+        self.env = energym.make('SimpleHouseRad-v0', weather=self.weather, start_day=self.start_day, start_month=self.start_month, simulation_days=365, eval_mode=self.eval_mode)
         obs = self._get_obs()
 
         return obs, {}

@@ -15,7 +15,7 @@ def get_dataset(path):
     obs = []
         
     for _, row in tqdm(df.iterrows()):
-        row['heaPum.P'] = normalize(row['heaPum.P'], 0, 1000)
+        row['heaPum.P'] = normalize(row['heaPum.P'], 0, 5000)
         row['temSup.T'] = normalize(row['temSup.T'], 273.15, 353.15)
         row['TOut.T'] = normalize(row['TOut.T'], 253.15, 343.15)
         row['delta'] = row['delta']

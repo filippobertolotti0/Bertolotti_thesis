@@ -5,3 +5,5 @@ energym/
 trained_models/
 training_lenght_gridsearch/
 docs/
+code/test
+code/train
