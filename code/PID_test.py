@@ -16,7 +16,7 @@ if __name__ == "__main__":
     
     kp = 0.1
     ki = 0
-    kd = 100
+    kd = 250
     
     out_list = []
     outputs = env.get_output()
@@ -55,6 +55,7 @@ if __name__ == "__main__":
         out_list.append(outputs)
         
         last_error = -error
+        print(f"{outputs['heaPum.COP']}")
         
     out_df = pd.DataFrame(out_list)
     print(f"Mean HeatPump power: {out_df['heaPum.P'].sum()/steps}")

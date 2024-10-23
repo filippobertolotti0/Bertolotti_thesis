@@ -10,15 +10,13 @@ from utils import normalize
 import matplotlib.pyplot as plt 
 
 def reward_function(obs, action, last_action):
-    delta = obs['delta']
+    delta = obs['delta'] 
     heat_pump_power = normalize(obs['heaPum.P'], 0, 5000)
     
-    if abs(delta) < 1:
-        smoothness_error = -2 * abs(action - last_action)
-    else:
-        smoothness_error = 0
-    temp_error = -4 * abs(delta)
-    energy_penalty = -3 * heat_pump_power
+    smoothness_error = -8 * abs(action - last_action)
+    energy_penalty = -4 * heat_pump_power
+    temp_error = -5 * abs(delta)
+    
     reward = temp_error + energy_penalty + smoothness_error
     
     return reward
@@ -31,7 +29,7 @@ if __name__ == "__main__":
     
     kp = 0.1
     ki = 0
-    kd = 100
+    kd = 220
     
     out_list = []
     acts = []

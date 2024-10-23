@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 import registration
 from utils import unnormalize, weathers
+from PID import PID
 
 def get_tick_positions(week_number: int):
     if week_number == 1:
@@ -73,10 +74,12 @@ def training_comparison():
 def test_comparison():
     out_list = []
     
-    models = ["ddpg_after_bc", "ddpg_after_pretraining", "ddpg_only_online"]
+    pid = PID()
+    
+    models = ["bc_pretrained_offline", "ddpg_pretrained_offline", "ddpg_from_scratch"]
     plt.figure(figsize=(12, 6))
     
-    for model_name, color, label in zip(models, ["b", "r", "g"], ["After bc", "After offline pretraining", "Only online"]):
+    for model_name, color, label in zip(models, ["b", "r", "g"], ["After bc", "Pretrained offline", "Only online"]):
         out_list = []
         env = gym.make("SimpleHouseRad-v0", eval_mode=False)
         model = d3rlpy.algos.DDPGConfig().create()
@@ -118,36 +121,22 @@ def test_comparison():
     env = energym.make("SimpleHouseRad-v0", simulation_days=365, eval_mode=False)
     outputs = env.get_output()
     set_point = 16
-    last_error = 0
-    total_error = 0
     cumulative_error = 0
     set_point = 16
-    kp = 0.1
-    ki = 0
-    kd = 100
 
     for i in tqdm(range(steps)):
         if i == 84:
             set_point = 20
         if i == 252:
             set_point = 16
-        error = (outputs['temRoo.T'] - 273.15) - set_point
-        total_error += (-error)
-        cumulative_error += abs(error)
-        delta_error = (-error) - last_error
-        heat_P_power = outputs['heaPum.P']/5000
         
-        control_signal = kp * (-error) + ki * 300 * total_error + (kd/300) * delta_error
-        heat_P_power += control_signal
-        control_signal = max(0, min(1, heat_P_power))
+        control_signal, cumulative_error = pid.predict(outputs, set_point, cumulative_error)
         
         control = {}
         control['u'] = [control_signal]
         outputs = env.step(control)
         out_list.append(outputs)
-        
-        last_error = -error
-        
+                
     out_df = pd.DataFrame(out_list)
     print(f"Mean HeatPump power: {out_df['heaPum.P'].sum()/steps}")
     print(f"Mean temperature error: {cumulative_error/steps}")
@@ -159,9 +148,27 @@ def test_comparison():
     plt.axhline(y=20, linestyle='--')   
     plt.tight_layout()
     plt.legend()
-    plt.savefig(f"./graphs/test_comparison")
+    # plt.savefig(f"./graphs/test_comparison")
+    plt.show()
+    
+def reward_convergence(path, episode_days):
+    df = pd.read_excel(path)["reward"]
+    rewards = []
+    step_number = []
+    episode_steps = 288*episode_days
+    r = len(df) // episode_steps
+    
+    for i in range(r):
+        episode_reward = df[i*episode_steps:(i+1)*episode_steps]
+        mean_reward = sum(episode_reward)/episode_steps
+        if mean_reward > -100:
+            rewards.append(mean_reward)
+            step_number.append(i+1)
+        
+    plt.plot(step_number, rewards)
     plt.show()
 
 if __name__ == "__main__":
     # training_comparison()
-    test_comparison()
+    # test_comparison()
+    reward_convergence("./datasets/ddpg_only_online_3.xlsx", 2)
