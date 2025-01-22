@@ -2,12 +2,13 @@ from matplotlib import pyplot as plt
 import gymnasium as gym
 import energym
 import d3rlpy
+from d3rlpy.preprocessing import MinMaxActionScaler
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import registration
-from utils import unnormalize, weathers
-from PID import PID
+from utils import unnormalize, DAY, WEEK, MONTH, HALF_YEAR, YEAR
+from PID.PID import PID
 
 def get_tick_positions(week_number: int):
     if week_number == 1:
@@ -151,24 +152,189 @@ def test_comparison():
     # plt.savefig(f"./graphs/test_comparison")
     plt.show()
     
-def reward_convergence(path, episode_days):
-    df = pd.read_excel(path)["reward"]
-    rewards = []
-    step_number = []
-    episode_steps = 288*episode_days
-    r = len(df) // episode_steps
-    
-    for i in range(r):
-        episode_reward = df[i*episode_steps:(i+1)*episode_steps]
-        mean_reward = sum(episode_reward)/episode_steps
-        if mean_reward > -100:
-            rewards.append(mean_reward)
-            step_number.append(i+1)
+def reward_convergence(path, episode_length):
+    plt.figure(figsize=(12, 6)) 
+    for p in path:
+        df = pd.read_excel(f"./trained_models/{p}/{p}.xlsx")["reward"]
+        rewards = []
+        step_number = []
+        # total_step = len(df)
+        total_step = HALF_YEAR
+        total_episodes = total_step // episode_length
         
-    plt.plot(step_number, rewards)
+        for i in range(total_episodes):
+            episode_reward = df[i*episode_length:(i+1)*episode_length]
+            # mean_reward = sum(episode_reward)/episode_length
+            cumulative_reward = sum(episode_reward)
+            rewards.append(cumulative_reward)
+            step_number.append(i+1)
+        plt.plot(step_number, rewards, label=p)
+        
+    for i in range(HALF_YEAR//episode_length, total_episodes, HALF_YEAR//episode_length):
+        plt.axvline(x=i, color='g', linestyle='--')
+    plt.xlabel("Episode")
+    plt.ylabel("Cumulative reward")
+    plt.tight_layout()
+    plt.legend()
+    plt.savefig("./graphs/reward_convergence/reward_convergence")
     plt.show()
+    
+def reward_convergence_splitted(path, episode_length):
+    plt.figure(figsize=(12, 6)) 
+    for p in path:
+        temp_penalty = pd.read_excel(f"./trained_models/{p}/{p}.xlsx")["temp_penalty"]
+        energy_penalty = pd.read_excel(f"./trained_models/{p}/{p}.xlsx")["energy_penalty"]
+        temp_rewards = []
+        energy_rewards = []
+        step_number = []
+        total_step = len(temp_penalty)
+        total_episodes = total_step // episode_length
+        
+        for i in range(total_episodes):
+            episode_temp_penalty = temp_penalty[i*episode_length:(i+1)*episode_length]
+            episode_energy_penalty = energy_penalty[i*episode_length:(i+1)*episode_length]
+            # mean_reward = sum(episode_reward)/episode_length
+            temp_cumulative_reward = sum(episode_temp_penalty)
+            energy_cumulative_reward = sum(episode_energy_penalty)
+            temp_rewards.append(temp_cumulative_reward)
+            energy_rewards.append(energy_cumulative_reward)
+            step_number.append(i+1)
+        plt.plot(step_number, temp_rewards, label=f"{p}: Temperature penalty")
+        plt.plot(step_number, energy_rewards, label=f"{p}: Energy penalty")
+        
+    for i in range(HALF_YEAR//episode_length, total_episodes, HALF_YEAR//episode_length):
+        plt.axvline(x=i, color='g', linestyle='--')
+    plt.xlabel("Episode")
+    plt.ylabel("Cumulative reward")
+    plt.tight_layout()
+    plt.savefig("./graphs/reward_convergence/reward_convergence_splitted")
+    plt.legend()
+    plt.show()
+    
+def test(model_name, test_lenght):
+    # test parameters
+    steps = test_lenght
+    start_month = 10
+    year = 2024
+    low_temp = 16
+    high_temp = 20
+    turn_on = 7 * 12
+    turn_off = 21 * 12
+    
+    env = gym.make("SimpleHouseRad-v0", start_month=start_month, year=year, start_day=1)
+    d3rlpy.envs.seed_env(env, 42)
+    f, (ax1, ax2) = plt.subplots(2, figsize=(12, 6))
+    
+    # RL agent
+    # expert = d3rlpy.algos.DDPGConfig(
+    #         action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
+    #     ).create()
+    # expert.build_with_env(env)
+    # expert.load_model(f"./trained_models/{model_name}/{model_name}")
+    
+    out_list = []
+    obs, _ = env.reset()
+    agent_cumulative_error = 0
+    daily_timestep = 0
+    env.set_set_point(low_temp)
+    
+    for i in tqdm(range(steps)):
+        if daily_timestep == turn_on:
+            env.set_set_point(high_temp)
+        elif daily_timestep == turn_off:
+            env.set_set_point(low_temp)
+        elif daily_timestep == DAY:
+            daily_timestep = 0
+        action = model_name.predict(np.expand_dims(obs, axis=0))[0]
+        obs, rewards, terminated, truncated, info = env.step(action)
+        agent_cumulative_error += abs(obs[3])
+        out_list.append({
+                "heaPum.P": unnormalize(obs[0], 0, 5000),
+                "temSup.T": unnormalize(obs[1], 273.15, 353.15),
+                "TOut.T": unnormalize(obs[2], 253.15, 343.15),
+                "temRoo.T": info['temRoo.T'],
+            }
+        )
+        
+        daily_timestep += 1
+        
+    env.close()
 
+    out_df = pd.DataFrame(out_list)
+    mean_power_rl = out_df['heaPum.P'].sum()/steps
+    mean_error_rl = agent_cumulative_error/steps
+    
+    print(f"Mean HeatPump power: {mean_power_rl:.3f}")
+    print(f"Mean temperature error: {mean_error_rl:.3f}")
+    
+    return mean_error_rl, mean_power_rl
+    # ax1.plot(out_df["temRoo.T"]-273.15, color='b', label=model_name)
+    # ax2.plot(out_df["heaPum.P"], color='b', label=model_name) 
+    
+    # PID agent
+    # env = energym.make("SimpleHouseRad-v0", start_day=15, start_month=start_month, year=year, simulation_days=365, eval_mode=False)
+    # pid = PID()
+    
+    # out_list = []
+    # outputs = env.get_output()
+    # daily_timestep = 0
+    # set_point = low_temp
+
+    # for i in tqdm(range(steps)):
+    #     if daily_timestep == turn_on:
+    #         set_point = high_temp
+    #     elif daily_timestep == turn_off:
+    #         set_point = low_temp
+    #     elif daily_timestep == DAY:
+    #         daily_timestep = 0
+        
+    #     control_signal = pid.predict(outputs, set_point)
+        
+    #     control = {}
+    #     control['u'] = [control_signal]
+    #     outputs = env.step(control)
+    #     out_list.append(outputs)
+        
+    #     daily_timestep += 1
+        
+    # out_df = pd.DataFrame(out_list)
+    
+    # mean_power_pid = out_df['heaPum.P'].sum()/steps
+    # mean_error_pid = pid.cumulative_error/steps
+    
+    # ax1.plot(out_df["temRoo.T"]-273.15, color='r', label='PID')
+    # ax2.plot(out_df["heaPum.P"], color='r', label='PID')
+    
+    # for i in range(0, steps, DAY):
+    #     ax1.plot([0+i, turn_on+i], [low_temp, low_temp], color='b', linestyle='--')
+    #     ax1.plot([turn_on+i, turn_off+i], [high_temp, high_temp], color='b', linestyle='--')
+    #     ax1.plot([turn_off+i, DAY+i], [low_temp, low_temp], color='b', linestyle='--')
+    # for i in range(turn_on, steps, DAY):
+    #     ax1.axvline(x=i, color='g', linestyle='--')
+    # for i in range(turn_off, steps, DAY):
+    #     ax1.axvline(x=i, color='g', linestyle='--')
+    
+    # ax1.set_ylabel('Room temperature')
+    # ax2.set_ylabel('Heat pump power')
+    # plt.xlabel('Steps (5 min)')
+    
+    # plt.tight_layout()
+    # plt.legend()
+    # plt.savefig(f"./trained_models/{model_name}/{model_name}_test.png")
+    
+    # print("------------------------------------------------")
+    # print(f"\tDDPG")
+    # print(f"\tAverage HeatPump power: {mean_power_rl:.3f}")
+    # print(f"\tAverage temperature error: {mean_error_rl:.3f}")
+    # print("------------------------------------------------")
+    # print(f"\tPID")
+    # print(f"\tAverage HeatPump power: {mean_power_pid:.3f}")
+    # print(f"\tAverage temperature error: {mean_error_pid:.3f}")
+    # print("------------------------------------------------")
+    
 if __name__ == "__main__":
     # training_comparison()
     # test_comparison()
-    reward_convergence("./datasets/ddpg_only_online_3.xlsx", 2)
+    reward_convergence(["ddpg_2days_reset_overlapped", "ddpg_2days_reset", "ddpg_no_FMU_reset"], DAY*2)
+    # reward_convergence_splitted(["ddpg_continuative"], DAY*2)
+    # test("ddpg_test_2", DAY*3)

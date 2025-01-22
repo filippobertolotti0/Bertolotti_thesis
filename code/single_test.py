@@ -2,57 +2,61 @@ from matplotlib import pyplot as plt
 import gymnasium as gym
 import energym
 import d3rlpy
+from d3rlpy.preprocessing import MinMaxActionScaler
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import registration
-from utils import unnormalize, weathers
-from PID import PID
+from utils import weathers, unnormalize, normalize, DAY, WEEK, MONTH, HALF_YEAR, YEAR
+from PID.PID import PID
 
 if __name__ == "__main__":
-    env = gym.make("SimpleHouseRad-v0", eval_mode=False, online=False)
-    pid = PID()
+    # test parameters
+    steps = HALF_YEAR
+    start_day = 1
+    start_month = 10
+    year = 2024
+    low_temp = 16
+    high_temp = 20
+    turn_on = 7 * 12
+    turn_off = 21 * 12
+    weather = "aosta2019"
+    schedule = 0
+    
+    env = gym.make("SimpleHouseRad-v0", weather=weather, start_month=start_month, year=year, start_day=start_day)
     d3rlpy.envs.seed_env(env, 42)
-    model_name = ""
-    
-    expert = d3rlpy.algos.DDPGConfig().create()
-    expert.build_with_env(env)
-    expert.load_model("./trained_models/ddpg_only_online_3")
-    
-    model = d3rlpy.algos.DDPGConfig(
-            gamma=0.99,
-            actor_learning_rate=0.001,
-            critic_learning_rate=0.001,
-            batch_size=512,
-            tau=0.08
-        ).create()
-    model.build_with_env(env)
-    model.copy_policy_from(expert)
-    # model.copy_q_function_from(expert)
-    # model.save_model("./trained_models/ddpg_from_scratch")
-    
-    out_list = []
-    
     f, (ax1, ax2) = plt.subplots(2, figsize=(12, 6))
     
-    obs, _ = env.reset()
-    steps = 288
-    cumulative_error = 0
+    # RL agent
+    model_name = "aosta_1"
     
-    env.set_set_point(289.15)
+    model = d3rlpy.algos.DDPGConfig(
+            action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
+        ).create()
+    model.build_with_env(env)
+    model.load_model(f"./trained_models/{model_name}/{model_name}")
+    # model.copy_policy_from(expert)
+    
+    out_list = []
+    rewards_list = []
+    obs, _ = env.reset()
+    agent_cumulative_error = 0
     daily_timestep = 0
+    env.set_set_point(low_temp)
     
     for i in tqdm(range(steps)):
-        if daily_timestep == 84:
-            env.set_set_point(293.15)
-        elif daily_timestep == 252:
-            env.set_set_point(289.15)
-        elif daily_timestep == 288:
+        if daily_timestep == turn_on:
+            env.set_set_point(high_temp)
+            schedule = 1
+        elif daily_timestep == turn_off:
+            env.set_set_point(low_temp)
+            schedule = 0
+        elif daily_timestep == DAY:
             daily_timestep = 0
         action = model.predict(np.expand_dims(obs, axis=0))[0]
-        action = np.clip(action, env.action_space.low, env.action_space.high)
         obs, rewards, terminated, truncated, info = env.step(action)
-        cumulative_error += abs(obs[3])
+        agent_cumulative_error += abs(obs[3])
+        rewards_list.append(rewards)
         out_list.append({
                 "heaPum.P": unnormalize(obs[0], 0, 5000),
                 "temSup.T": unnormalize(obs[1], 273.15, 353.15),
@@ -66,30 +70,30 @@ if __name__ == "__main__":
     env.close()
 
     out_df = pd.DataFrame(out_list)
-    print(f"DDPG\n---------------------------------------")
-    print(f"Mean HeatPump power: {out_df['heaPum.P'].sum()/steps}")
-    print(f"Mean temperature error: {cumulative_error/steps}")
-    
+    mean_power_rl = out_df['heaPum.P'].sum()/steps
+    mean_error_rl = agent_cumulative_error/steps
     ax1.plot(out_df["temRoo.T"]-273.15, color='b', label=model_name)
-    ax2.plot(out_df["heaPum.P"], color='b', label=model_name)
-        
-    out_list = []
-    env = energym.make("SimpleHouseRad-v0", simulation_days=365, eval_mode=False)
-    outputs = env.get_output()
+    ax2.plot(out_df["heaPum.P"], color='b', label=model_name) 
     
-    cumulative_error = 0
-    daly_timestep = 0
-    set_point = 16
+    # PID agent
+    env = energym.make("SimpleHouseRad-v0", weather=weather, start_day=start_day, start_month=start_month, year=year, simulation_days=365, eval_mode=False)
+    pid = PID()
+    
+    out_list = []
+    outputs = env.get_output()
+    daily_timestep = 0
+    set_point = low_temp
 
     for i in tqdm(range(steps)):
-        if daily_timestep == 84:
-                set_point = 20
-        elif daily_timestep == 252:
-            set_point = 16
-        elif daily_timestep == 288:
+    # for i in tqdm(range(steps)):
+        if daily_timestep == turn_on:
+            set_point = high_temp
+        elif daily_timestep == turn_off:
+            set_point = low_temp
+        elif daily_timestep == DAY:
             daily_timestep = 0
         
-        control_signal, cumulative_error = pid.predict(outputs, set_point, cumulative_error)
+        control_signal = pid.predict(outputs, set_point)
         
         control = {}
         control['u'] = [control_signal]
@@ -99,27 +103,40 @@ if __name__ == "__main__":
         daily_timestep += 1
         
     out_df = pd.DataFrame(out_list)
-    print(f"PID\n---------------------------------------")
-    print(f"Mean HeatPump power: {out_df['heaPum.P'].sum()/steps}")
-    print(f"Mean temperature error: {cumulative_error/steps}")
+    
+    mean_power_pid = out_df['heaPum.P'].sum()/steps
+    mean_error_pid = pid.cumulative_error/steps
     
     ax1.plot(out_df["temRoo.T"]-273.15, color='r', label='PID')
     ax2.plot(out_df["heaPum.P"], color='r', label='PID')
     
-    for i in range(0, steps, 288):
-        ax1.plot([0+i, 84+i], [16, 16], color='b', linestyle='--')
-        ax1.plot([84+i, 252+i], [20, 20], color='b', linestyle='--')
-        ax1.plot([252+i, 288+i], [16, 16], color='b', linestyle='--')
-    for i in range(84, steps, 288):
+    for i in range(0, steps, DAY):
+        ax1.plot([0+i, turn_on+i], [low_temp, low_temp], color='b', linestyle='--')
+        ax1.plot([turn_on+i, turn_off+i], [high_temp, high_temp], color='b', linestyle='--')
+        ax1.plot([turn_off+i, DAY+i], [low_temp, low_temp], color='b', linestyle='--')
+    for i in range(turn_on, steps, DAY):
         ax1.axvline(x=i, color='g', linestyle='--')
-    for i in range(252, steps, 288):
+    for i in range(turn_off, steps, DAY):
         ax1.axvline(x=i, color='g', linestyle='--')
     
     ax1.set_ylabel('Room temperature')
     ax2.set_ylabel('Heat pump power')
     plt.xlabel('Steps (5 min)')
-      
+    
     plt.tight_layout()
     plt.legend()
-    # plt.savefig(f"./graphs/test_comparison")
+    # plt.savefig(f"./09_01/jan_test_off")
+    
+    print("------------------------------------------------")
+    print(f"\tDDPG")
+    print(f"\tAverage HeatPump power: {mean_power_rl:.3f}")
+    print(f"\tAverage temperature error: {mean_error_rl:.3f}")
+    print("------------------------------------------------")
+    print(f"\tPID")
+    print(f"\tAverage HeatPump power: {mean_power_pid:.3f}")
+    print(f"\tAverage temperature error: {mean_error_pid:.3f}")
+    print("------------------------------------------------")
+    print(f"\tSaving: {(mean_power_pid-mean_power_rl)/(mean_power_pid/100):.3f}%")
+    print(f"\tAverage reward: {sum(rewards_list)/len(rewards_list)}")
+    
     plt.show()

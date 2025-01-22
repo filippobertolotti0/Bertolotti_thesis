@@ -2,11 +2,12 @@ class PID():
     def __init__(self) -> None:
         self.last_error = 0
         self.total_error = 0
+        self.cumulative_error = 0
         self.kp = 0.1
         self.ki = 0
         self.kd = 220
         
-    def predict(self, outputs, set_point, cumulative_error):
+    def predict(self, outputs, set_point):
         error = (outputs['temRoo.T'] - 273.15) - set_point
         self.total_error += (-error)
         delta_error = (-error) - self.last_error
@@ -17,6 +18,6 @@ class PID():
         control_signal = max(0, min(1, heat_P_power))
         
         self.last_error = -error
-        cumulative_error += abs(error)
+        self.cumulative_error += abs(error)
         
-        return control_signal, cumulative_error
+        return control_signal
