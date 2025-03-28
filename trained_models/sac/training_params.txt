@@ -1,0 +1,8 @@
+model_name = sac_1x8
+episode_lenght = 288
+agent_params = {'actor_learning_rate': 0.000993354483407106, 'batch_size': 2048, 'critic_learning_rate': 2.6679098378465916e-05, 'gamma': 0.88, 'n_critics': 4, 'tau': 0.02, 'temp_learning_rate': 0.0002015096624240672}
+buffer_lenght = 50000
+seasons = [2020, 2021]
+n_steps = 48384
+update_interval = 8
+n_updates = 1

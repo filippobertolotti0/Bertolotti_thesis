@@ -1,0 +1,8 @@
+model_name = ddpg
+episode_lenght = 288
+agent_params = {'gamma': 0.95, 'actor_learning_rate': 0.0007, 'critic_learning_rate': 0.0002, 'batch_size': 2048, 'tau': 0.05}
+buffer_lenght = 50000
+seasons = [2020, 2021]
+n_steps = 48384
+update_interval = 32
+n_updates = 1

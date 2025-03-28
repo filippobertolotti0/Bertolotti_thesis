@@ -6,7 +6,7 @@ from tqdm import tqdm
 import registration
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils import unnormalize, save_training_params, weathers, DDPG_PARAMS_ONLINE_SLOW_CONV, DAY, WEEK, MONTH, HALF_YEAR, YEAR
+from utils import unnormalize, save_training_params, weathers, DDPG_PARAMS_ONLINE_SLOW_CONV, DAY, WEEK, MONTH, HALF_YEAR, YEAR, TD3_PARAMS_ONLINE, SAC_PARAMS_ONLINE
 import torch
 import os
 
@@ -114,13 +114,13 @@ def test(model_name, test_lenght):
 
 if __name__ == "__main__":
     training_params = {
-        "model_name": "aosta_1",
+        "model_name": "sac_1x8",
         "episode_lenght": DAY,
-        "agent_params": DDPG_PARAMS_ONLINE_SLOW_CONV,
+        "agent_params": SAC_PARAMS_ONLINE,
         "buffer_lenght": 50000,
-        "seasons": [2020],
+        "seasons": [2020, 2021],
         "n_steps": HALF_YEAR,
-        "update_interval": 16,
+        "update_interval": 8,
         "n_updates": 1
     }
     
@@ -138,21 +138,11 @@ if __name__ == "__main__":
     out_list = []
     df = []
     
-    # expert = d3rlpy.algos.BCConfig().create()
-    # expert.build_with_env(env)
-    # expert.load_model("./trained_models/bc_offline")
-    
-    # expert = d3rlpy.algos.DDPGConfig().create()
-    # expert.build_with_env(env)
-    # expert.load_model("./trained_models/ddpg_offline")
-    
-    learner = d3rlpy.algos.DDPGConfig(
+    learner = d3rlpy.algos.SACConfig(
             action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
             **training_params["agent_params"]
         ).create("cuda:0")
     learner.build_with_env(env)
-    # learner.copy_policy_from(expert)
-    # learner.copy_q_function_from(expert)
     
     buffer = d3rlpy.dataset.FIFOBuffer(limit=training_params["buffer_lenght"])
     replay_buffer = d3rlpy.dataset.ReplayBuffer(
@@ -179,7 +169,9 @@ if __name__ == "__main__":
             "energy_penalty": energy_penalty
             # "energy_penalty": e_penalty
         })
-    out_df = pd.DataFrame(df)    
+    out_df = pd.DataFrame(df)
+    out_df["reward"] = pd.concat([pd.Series([0]), out_df["reward"][:-1]]).reset_index(drop=True)
+    out_df = out_df.iloc[1:].reset_index(drop=True)   
     
     env.close()
     

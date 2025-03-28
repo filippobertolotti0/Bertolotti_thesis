@@ -1,12 +1,4 @@
 cartpole_pendulum/
 d3rlpy_logs/
-datasets/
 energym/
-trained_models/
-training_lenght_gridsearch/
-docs/
-code/test
-code/train
 db/
-epw_files/
-offline_training_gridsearch/

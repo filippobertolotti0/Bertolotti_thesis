@@ -1,0 +1,9 @@
+model_name = td3_off_on_2x1
+expert_name = td3_offline
+episode_lenght = 288
+agent_params_online = {'actor_learning_rate': 0.000993354483407106, 'batch_size': 2048, 'critic_learning_rate': 2.6679098378465916e-05, 'gamma': 0.88, 'n_critics': 4, 'tau': 0.02, 'temp_learning_rate': 0.0002015096624240672, 'update_interval': 8, 'n_updates': 1}
+buffer_lenght = 50000
+seasons = [2020]
+n_steps = 16128
+update_interval = 2
+n_updates = 1

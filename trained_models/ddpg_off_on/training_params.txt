@@ -1,0 +1,9 @@
+model_name = ddpg_off_on
+expert_name = aosta_offline
+episode_lenght = 288
+agent_params_online = {'gamma': 0.95, 'actor_learning_rate': 0.0007, 'critic_learning_rate': 0.0002, 'batch_size': 2048, 'tau': 0.05}
+buffer_lenght = 50000
+seasons = [2020]
+n_steps = 16128
+update_interval = 4
+n_updates = 1

@@ -1,0 +1,8 @@
+model_name = ddpg_2days_reset_overlapped_1
+episode_lenght = 576
+agent_params = {'gamma': 0.95, 'actor_learning_rate': 0.0003, 'critic_learning_rate': 0.001, 'batch_size': 128, 'tau': 0.05}
+buffer_lenght = 200000
+seasons = [2015]
+n_steps = 576
+update_interval = 2
+n_updates = 1

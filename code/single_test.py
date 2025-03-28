@@ -7,12 +7,12 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import registration
-from utils import weathers, unnormalize, normalize, DAY, WEEK, MONTH, HALF_YEAR, YEAR
+from utils import SAC_PARAMS_ONLINE, TD3_PARAMS_ONLINE, weathers, unnormalize, normalize, DAY, WEEK, MONTH, HALF_YEAR, YEAR
 from PID.PID import PID
 
 if __name__ == "__main__":
     # test parameters
-    steps = HALF_YEAR
+    steps = DAY
     start_day = 1
     start_month = 10
     year = 2024
@@ -28,9 +28,10 @@ if __name__ == "__main__":
     f, (ax1, ax2) = plt.subplots(2, figsize=(12, 6))
     
     # RL agent
-    model_name = "aosta_1"
+    model_name = "ddpg_off_on"
     
     model = d3rlpy.algos.DDPGConfig(
+            # **TD3_PARAMS_ONLINE,
             action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
         ).create()
     model.build_with_env(env)
@@ -125,9 +126,9 @@ if __name__ == "__main__":
     
     plt.tight_layout()
     plt.legend()
-    # plt.savefig(f"./09_01/jan_test_off")
+    plt.savefig(f"./off_on")
     
-    print("------------------------------------------------")
+    print(f"------------------{model_name}------------------------------")
     print(f"\tDDPG")
     print(f"\tAverage HeatPump power: {mean_power_rl:.3f}")
     print(f"\tAverage temperature error: {mean_error_rl:.3f}")

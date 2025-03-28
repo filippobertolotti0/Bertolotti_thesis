@@ -1,0 +1,11 @@
+model_name = sac_off
+dataset = PID_dataset_aosta.xlsx
+gamma = 0.88
+actor_learning_rate = 0.00013252793344665855
+critic_learning_rate = 1.190008670186549e-05
+temp_learning_rate = 1.1222270343816039e-05
+batch_size = 512
+tau = 0.05
+n_steps = 50000
+n_steps_per_epoch = 20000
+episode_lenght = 288

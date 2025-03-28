@@ -9,8 +9,8 @@ def reward_function(obs):
     delta = abs(obs['delta'])
     heat_pump_power = normalize(obs['heaPum.P'], 0, 5000)
 
-    weight_t = -2.4 * 2
-    weight_e = -0.6 * 2
+    weight_t = -2.4
+    weight_e = -0.6
         
     temperature_error = weight_t * delta
     energy_penalty = weight_e * heat_pump_power     
@@ -31,8 +31,8 @@ if __name__ == "__main__":
     rewards = []
     set_points = []
     
-    for year in [2015, 2016, 2017, 2018]:
-        env = energym.make("SimpleHouseRad-v0", simulation_days=190, start_day = 1, start_month = 10, year = year, eval_mode=False)
+    for year in [2020, 2021, 2022, 2023]:
+        env = energym.make("SimpleHouseRad-v0", weather=f"aosta{year}", simulation_days=190, start_day=1, start_month=10, year=year, eval_mode=False)
         
         last_error = 0
         total_error = 0
@@ -44,6 +44,7 @@ if __name__ == "__main__":
         outputs['delta'] = (outputs['temRoo.T'] - 273.15) - set_point
         outputs['on'] = 0.0
         out_list.append(outputs)
+        rewards.append(0)
         
         daily_timestep = 0
 
@@ -54,7 +55,6 @@ if __name__ == "__main__":
                 set_point = 16
             elif daily_timestep == 288:
                 daily_timestep = 0
-            time = (i + 1) * 300
             error = (outputs['temRoo.T'] - 273.15) - set_point
             total_error += (-error)
             delta_error = (-error) - last_error
@@ -78,7 +78,6 @@ if __name__ == "__main__":
             set_points.append(set_point)
         
         acts.append([0])
-        rewards.append(0)
         
     out_df = pd.DataFrame(out_list)
     out_df = out_df[["heaPum.P", "temSup.T", "TOut.T", "delta"]]
@@ -92,4 +91,4 @@ if __name__ == "__main__":
         'rewards': rewards,
     })
     
-    dataset.to_excel('datasets/PID_dataset_basel_prova.xlsx')
+    dataset.to_excel('datasets/PID_dataset_aosta.xlsx')

@@ -1,0 +1,8 @@
+model_name = ddpg_best_params
+episode_lenght = 2016
+agent_params = {'gamma': 0.99, 'actor_learning_rate': 4e-05, 'critic_learning_rate': 0.0003, 'batch_size': 256, 'tau': 0.05}
+buffer_lenght = 100000
+seasons = [2015]
+n_steps = 48384
+update_interval = 1
+n_updates = 2

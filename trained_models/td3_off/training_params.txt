@@ -1,0 +1,12 @@
+model_name = td3_off
+dataset = PID_dataset_aosta.xlsx
+gamma = 0.88
+actor_learning_rate = 0.0003899037287948072
+critic_learning_rate = 0.00023468554130439816
+batch_size = 128
+tau = 0.001
+target_smoothing_sigma = 0.5
+target_smoothing_clip = 0.3
+n_steps = 400000
+n_steps_per_epoch = 100000
+episode_lenght = 288

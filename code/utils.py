@@ -1,6 +1,4 @@
 import pandas as pd
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3 import DQN, DDPG, PPO, A2C, SAC, TD3
 from tqdm import tqdm
 
 DAY = 288
@@ -57,4 +55,54 @@ DDPG_PARAMS_ONLINE_SLOW_CONV = {
     'critic_learning_rate': 0.0002,
     'batch_size': 2048,
     'tau': 0.05
+}
+
+TD3_PARAMS_ONLINE = {
+    'gamma': 0.9,
+    'actor_learning_rate': 0.0005965698722229415,
+    'critic_learning_rate': 0.00013032913625000625,
+    'batch_size': 2048,
+    'tau': 0.05,
+    'target_smoothing_sigma': 0.2,
+    'target_smoothing_clip': 0.5,
+    'update_actor_interval': 2,
+    'update_interval': 9,
+    'n_updates': 2
+}
+
+TD3_PARAMS_OFFLINE = {
+    'actor_learning_rate': 0.0003899037287948072,
+    'critic_learning_rate': 0.00023468554130439816,
+    'batch_size': 128,
+    'tau': 0.001,
+    'gamma': 0.88,
+    'target_smoothing_sigma': 0.5,
+    'target_smoothing_clip': 0.3,
+    'update_actor_interval': 4,
+    'n_steps': 400000,
+    'n_steps_per_epoch': 100000
+}
+
+SAC_PARAMS_ONLINE = {
+    'actor_learning_rate': 0.000993354483407106,
+    'batch_size': 2048,
+    'critic_learning_rate': 2.6679098378465916e-05,
+    'gamma': 0.88,
+    'n_critics': 4,
+    'tau': 0.02,
+    'temp_learning_rate': 0.0002015096624240672,
+    'update_interval': 8,
+    'n_updates': 1,
+}
+
+SAC_PARAMS_OFFLINE = {
+    'actor_learning_rate': 0.00013252793344665855,
+    'critic_learning_rate': 1.190008670186549e-05,
+    'temp_learning_rate': 1.1222270343816039e-05,
+    'gamma': 0.88,
+    'batch_size': 512,
+    'tau': 0.05,
+    'n_steps': 50000,
+    'n_steps_per_epoch': 20000,
+    'n_critics': 2
 }

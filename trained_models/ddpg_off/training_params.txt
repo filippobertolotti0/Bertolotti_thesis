@@ -1,0 +1,10 @@
+model_name = ddpg_off
+dataset = PID_dataset_aosta.xlsx
+gamma = 0.88
+actor_learning_rate = 9.34293426e-05
+critic_learning_rate = 0.0008577842194694033
+batch_size = 256
+tau = 0.05
+n_steps = 400000
+n_steps_per_epoch = 50000
+episode_lenght = 288

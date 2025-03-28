@@ -11,7 +11,7 @@ import random
 import time
 
 class SimpleHouseRad(gym.Env):    
-    def __init__(self, weather="aosta2024", start_day=1, start_month=1, year=2019, episode_lenght=DAY*2, training_schedule=False):
+    def __init__(self, weather="aosta2020", start_day=1, start_month=1, year=2010, episode_lenght=DAY, training_schedule=False):
         self.env = energym.make('SimpleHouseRad-v0', weather=weather, start_day=start_day, start_month=start_month, year=year, simulation_days=180, eval_mode=False)
         self.weather = weather
         self.start_day = start_day
@@ -34,10 +34,6 @@ class SimpleHouseRad(gym.Env):
                                             high=np.array([1.0, 1.0, 1.0, 30]), 
                                             dtype=float)
         
-        # self.observation_space = spaces.Box(low=np.array([0.0, 0.0, 0.0, -30, 0.0]), 
-        #                                     high=np.array([1.0, 1.0, 1.0, 30, 1.0]), 
-        #                                     dtype=float)
-        
         self.step(np.array([0.0]))
         
     def set_set_point(self, set_point):
@@ -52,7 +48,6 @@ class SimpleHouseRad(gym.Env):
             normalize(outputs["temSup.T"], 273.15, 353.15),    # supply temperature
             normalize(outputs["TOut.T"], 253.15, 343.15),    # outdoor temperature
             delta,    # temperature error
-            # self.schedule    # schedule
         ], dtype=float)
         
         return observation
@@ -131,11 +126,9 @@ class SimpleHouseRad(gym.Env):
     def get_reward(self, outputs):        
         delta = abs(outputs[3])
         heat_pump_power = outputs[0]
-        # temperature_penalty = 0
             
         temperature_penalty = self.weight_t * delta
         energy_penalty = self.weight_e * heat_pump_power
-        # if outputs[4] == 1: temperature_penalty = self.weight_t * delta   
         
         reward = temperature_penalty + energy_penalty
 
