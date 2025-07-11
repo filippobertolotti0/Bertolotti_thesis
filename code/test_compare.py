@@ -70,7 +70,7 @@ def run_simulation(model=None, is_pid=False, steps=HALF_YEAR, start_day=1, start
             control = {'u': [control_signal]}
             outputs = env.step(control)
             out_list.append(outputs)
-            pid_cumulative_error += abs(outputs['temRoo.T'] - set_point)
+            pid_cumulative_error += abs(outputs['temRoo.T'] - set_point - 273.15)
             
             daily_timestep += 1
         
@@ -144,9 +144,9 @@ def run_simulation(model=None, is_pid=False, steps=HALF_YEAR, start_day=1, start
 
 def main():
     # Simulation parameters
-    steps = DAY
-    start_day = 15
-    start_month = 11
+    steps = HALF_YEAR
+    start_day = 1
+    start_month = 10
     year = 2024
     low_temp = 16
     high_temp = 20
@@ -159,34 +159,164 @@ def main():
     
     # Models to compare
     models_info = [
+        {
+            "name": "bc_1y_20_21", 
+            "config": d3rlpy.algos.BCConfig,
+            "color": "b",
+            "label": "bc_ddpg",
+            "params": {}
+        },
+        {
+            "name": "bc_1y_20_22", 
+            "config": d3rlpy.algos.BCConfig,
+            "color": "b",
+            "label": "bc_ddpg",
+            "params": {}
+        },
+        {
+            "name": "bc_1y_21_22", 
+            "config": d3rlpy.algos.BCConfig,
+            "color": "b",
+            "label": "bc_ddpg",
+            "params": {}
+        },
+        {
+            "name": "bc_1y_21_23", 
+            "config": d3rlpy.algos.BCConfig,
+            "color": "b",
+            "label": "bc_ddpg",
+            "params": {}
+        },
+        {
+            "name": "bc_1y_22_23", 
+            "config": d3rlpy.algos.BCConfig,
+            "color": "b",
+            "label": "bc_ddpg",
+            "params": {}
+        },
+        
         # {
-        #     "name": "ddpg_off", 
+        #     "name": "bc_td3", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "r",
+        #     "label": "bc_td3",
+        #     "params": td3_params
+        # },
+        # {
+        #     "name": "cql_sac", 
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "g",
+        #     "label": "cql_sac",
+        #     "params": sac_params
+        # },
+        
+        # {
+        #     "name": "td3_off_on_3m_20", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "b",
+        #     "label": "td3_1m_20",
+        #     "params": td3_params
+        # },
+        # {
+        #     "name": "td3_off_on_3m_21", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "r",
+        #     "label": "td3_1m_21",
+        #     "params": td3_params
+        # },
+        # {
+        #     "name": "td3_off_on_3m_22", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "b",
+        #     "label": "td3_1m_22",
+        #     "params": td3_params
+        # },
+        # {
+        #     "name": "td3_off_on_3m_23", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "r",
+        #     "label": "td3_1m_23",
+        #     "params": td3_params
+        # },
+        # {
+        #     "name": "td3_off_on_3m_24", 
+        #     "config": d3rlpy.algos.TD3Config,
+        #     "color": "b",
+        #     "label": "td3_1m_24",
+        #     "params": td3_params
+        # },
+        
+        # {
+        #     "name": "sac_off_on_3m_20", 
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "m",
+        #     "label": "sac_1m_20",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "sac_off_on_3m_21", 
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "m",
+        #     "label": "sac_1m_21",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "sac_off_on_3m_22", 
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "m",
+        #     "label": "sac_1m_22",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "sac_off_on_3m_23",
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "m",
+        #     "label": "sac_1m_23",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "sac_off_on_3m_24",
+        #     "config": d3rlpy.algos.SACConfig,
+        #     "color": "m",
+        #     "label": "sac_1m_24",
+        #     "params": {}
+        # },        
+        
+        # {
+        #     "name": "ddpg_off_on_3m_20", 
+        #     "config": d3rlpy.algos.DDPGConfig,
+        #     "color": "r",
+        #     "label": "ddpg_1m_20",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "ddpg_off_on_3m_21", 
         #     "config": d3rlpy.algos.DDPGConfig,
         #     "color": "b",
-        #     "label": "ddpg",
-        #     "params": {}  # Assuming these are defined elsewhere
+        #     "label": "ddpg_1m_21",
+        #     "params": {}
         # },
-        {
-            "name": "td3_offline_4", 
-            "config": d3rlpy.algos.TD3Config,
-            "color": "b",
-            "label": "td3_test",
-            "params": td3_params
-        },
-        {
-            "name": "td3_off", 
-            "config": d3rlpy.algos.TD3Config,
-            "color": "r",
-            "label": "td3",
-            "params": td3_params
-        },
-        {
-            "name": "sac_off", 
-            "config": d3rlpy.algos.SACConfig,
-            "color": "g",
-            "label": "sac",
-            "params": sac_params  # Assuming these are defined elsewhere
-        }
+        # {
+        #     "name": "ddpg_off_on_3m_22", 
+        #     "config": d3rlpy.algos.DDPGConfig,
+        #     "color": "k",
+        #     "label": "ddpg_1m_22",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "ddpg_off_on_3m_23", 
+        #     "config": d3rlpy.algos.DDPGConfig,
+        #     "color": "m",
+        #     "label": "ddpg_1m_23",
+        #     "params": {}
+        # },
+        # {
+        #     "name": "ddpg_off_on_3m_24", 
+        #     "config": d3rlpy.algos.DDPGConfig,
+        #     "color": "g",
+        #     "label": "ddpg_1m_24",
+        #     "params": {}
+        # },
     ]
     
     # Results storage
@@ -197,7 +327,7 @@ def main():
         # Create and load model
         model = model_info['config'](
             action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
-            # **model_info.get('params', {})
+            **model_info.get('params', {})
         ).create()
         
         # Build environment and load model
@@ -220,43 +350,43 @@ def main():
         )
         
         # Plot results
-        ax1.plot(rl_results['out_df']["temRoo.T"] - 273.15, color=model_info['color'], label=model_info['label'])
-        ax2.plot(rl_results['out_df']["heaPum.P"], color=model_info['color'], label=model_info['label'])
+        ax1.plot(rl_results['out_df']["temRoo.T"] - 273.15, color=model_info['color'], label=model_info['name'])
+        ax2.plot(rl_results['out_df']["heaPum.P"], color=model_info['color'], label=model_info['name'])
         
         # Store results
         results.append({
-            "model": model_info['label'],
+            "model": model_info['name'],
             "power": rl_results['mean_power'],
             "error": rl_results['mean_error'],
             "reward": rl_results['mean_reward']
         })
     
     # Run PID simulation
-    pid_results = run_simulation(
-        steps=steps,
-        model=model, 
-        start_day=start_day, 
-        start_month=start_month, 
-        year=year, 
-        low_temp=low_temp, 
-        high_temp=high_temp, 
-        turn_on=turn_on, 
-        turn_off=turn_off, 
-        weather=weather,
-        is_pid=True
-    )
+    # pid_results = run_simulation(
+    #     steps=steps,
+    #     model=model, 
+    #     start_day=start_day, 
+    #     start_month=start_month, 
+    #     year=year, 
+    #     low_temp=low_temp, 
+    #     high_temp=high_temp, 
+    #     turn_on=turn_on, 
+    #     turn_off=turn_off, 
+    #     weather=weather,
+    #     is_pid=True
+    # )
     
-    # Plot PID results
-    ax1.plot(pid_results['out_df']["temRoo.T"] - 273.15, color='k', label='PID')
-    ax2.plot(pid_results['out_df']["heaPum.P"], color='k', label='PID')
+    # # Plot PID results
+    # ax1.plot(pid_results['out_df']["temRoo.T"] - 273.15, color='k', label='PID')
+    # ax2.plot(pid_results['out_df']["heaPum.P"], color='k', label='PID')
     
-    # Add results for PID
-    results.append({
-        "model": "PID",
-        "power": pid_results['mean_power'],
-        "error": pid_results['mean_error'],
-        "reward": 0
-    })
+    # # Add results for PID
+    # results.append({
+    #     "model": "PID",
+    #     "power": pid_results['mean_power'],
+    #     "error": pid_results['mean_error'],
+    #     "reward": 0
+    # })
     
     # Plotting details
     ax1.set_ylabel('Room temperature (°C)')
@@ -266,6 +396,11 @@ def main():
     # Add temperature threshold lines
     ax1.axhline(y=low_temp, color='grey', linestyle='--')
     ax1.axhline(y=high_temp, color='grey', linestyle='--')
+    
+    ax1.axvline(x=turn_on, color='y', linestyle='--')
+    ax1.axvline(x=turn_off, color='y', linestyle='--')
+    ax2.axvline(x=turn_on, color='y', linestyle='--')
+    ax2.axvline(x=turn_off, color='y', linestyle='--')
     
     plt.tight_layout()
     plt.legend()
@@ -280,7 +415,7 @@ def main():
         print(f"Saving: {(results[-1]['power'] - result['power'])/(results[-1]['power']/100):.3f}%")
         print("------------------------------------------------")
     
-    # plt.savefig("onNOV.png")
+    # plt.savefig("il_rl.png")
     plt.show()
 
 if __name__ == "__main__":

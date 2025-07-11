@@ -7,20 +7,20 @@ from online_training import reward_plot, test
 import registration
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils import unnormalize, save_training_params, weathers, DDPG_PARAMS_ONLINE_SLOW_CONV, SAC_PARAMS_ONLINE, DAY, WEEK, MONTH, HALF_YEAR, YEAR
+from utils import unnormalize, save_training_params, weathers, DDPG_PARAMS_ONLINE, TD3_PARAMS_ONLINE, SAC_PARAMS_ONLINE, DAY, WEEK, MONTH, HALF_YEAR, YEAR
 import torch
 import os
 
 if __name__ == "__main__":
     training_params = {
-        "model_name": "sac_off_on_1",
-        "expert_name": "sac_off",
+        "model_name": "",
+        "expert_name": "",
         "episode_lenght": DAY,
-        "agent_params_online": SAC_PARAMS_ONLINE,
+        "agent_params_online": DDPG_PARAMS_ONLINE,
         "buffer_lenght": 50000,
-        "seasons": [2020],
-        "n_steps": MONTH*2,
-        "update_interval": 4,
+        "seasons": [2023],
+        "n_steps": MONTH*3,
+        "update_interval": 2,
         "n_updates": 1
     }
     
@@ -38,18 +38,18 @@ if __name__ == "__main__":
     out_list = []
     df = []
     
-    expert = d3rlpy.algos.SACConfig().create()
+    expert = d3rlpy.algos.DDPGConfig().create()
     expert.build_with_env(env)
     expert.load_model(f"./trained_models/{training_params['expert_name']}/{training_params['expert_name']}")
     
-    learner = d3rlpy.algos.SACConfig(
+    learner = d3rlpy.algos.DDPGConfig(
             tau=0.005,
             gamma=0.99,
             actor_learning_rate=0.0001,
             critic_learning_rate=0.0001,
             
             action_scaler=MinMaxActionScaler(minimum=0.0, maximum=1.0),
-            # **training_params["agent_params"]
+            # **training_params["agent_params_online"]
         ).create("cuda:0")
     learner.build_with_env(env)
     learner.copy_policy_from(expert)

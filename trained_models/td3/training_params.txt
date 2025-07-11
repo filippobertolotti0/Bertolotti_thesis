@@ -1,8 +1,0 @@
-model_name = td3_9x1
-episode_lenght = 288
-agent_params = {'gamma': 0.9, 'actor_learning_rate': 0.0005965698722229415, 'critic_learning_rate': 0.00013032913625000625, 'batch_size': 2048, 'tau': 0.05, 'target_smoothing_sigma': 0.2, 'target_smoothing_clip': 0.5, 'update_actor_interval': 2}
-buffer_lenght = 50000
-seasons = [2020, 2021]
-n_steps = 48384
-update_interval = 9
-n_updates = 1

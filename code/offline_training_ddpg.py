@@ -7,14 +7,14 @@ from utils import get_dataset, save_training_params
 
 if __name__ == "__main__":
     params = {
-        "model_name": "aosta_offline_1",
-        "dataset": "PID_dataset_aosta.xlsx",
+        "model_name": "",
+        "dataset": "",
         "gamma": 0.88,
         "actor_learning_rate": 0.0000934293426,
         "critic_learning_rate": 0.0008577842194694033,
         "batch_size": 256,
         "tau": 0.05,
-        "n_steps": 600000,
+        "n_steps": 400000,
         "n_steps_per_epoch": 50000,
         "episode_lenght": 288
     }

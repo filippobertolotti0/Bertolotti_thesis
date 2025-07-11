@@ -14,13 +14,13 @@ if __name__ == "__main__":
     # test parameters
     steps = DAY
     start_day = 1
-    start_month = 10
+    start_month = 12
     year = 2024
     low_temp = 16
     high_temp = 20
     turn_on = 7 * 12
     turn_off = 21 * 12
-    weather = "aosta2019"
+    weather = "aosta2024"
     schedule = 0
     
     env = gym.make("SimpleHouseRad-v0", weather=weather, start_month=start_month, year=year, start_day=start_day)
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     f, (ax1, ax2) = plt.subplots(2, figsize=(12, 6))
     
     # RL agent
-    model_name = "ddpg_off_on"
+    model_name = ""
     
     model = d3rlpy.algos.DDPGConfig(
             # **TD3_PARAMS_ONLINE,
@@ -126,10 +126,10 @@ if __name__ == "__main__":
     
     plt.tight_layout()
     plt.legend()
-    plt.savefig(f"./off_on")
+    # plt.savefig(f"./off_on")
     
     print(f"------------------{model_name}------------------------------")
-    print(f"\tDDPG")
+    print(f"\t{model_name}")
     print(f"\tAverage HeatPump power: {mean_power_rl:.3f}")
     print(f"\tAverage temperature error: {mean_error_rl:.3f}")
     print("------------------------------------------------")

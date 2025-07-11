@@ -2,3 +2,10 @@ cartpole_pendulum/
 d3rlpy_logs/
 energym/
 db/
+trained_models/
+datasets/
+docs/tesi_images
+docs/slides
+docs/results
+graphs/
+avg_rewards/

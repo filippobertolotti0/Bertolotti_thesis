@@ -7,8 +7,8 @@ from utils import get_dataset, save_training_params, TD3_PARAMS_OFFLINE
 
 if __name__ == "__main__":
     params = {
-        "model_name": "td3_offline_4",
-        "dataset": "PID_dataset_aosta.xlsx",
+        "model_name": "",
+        "dataset": "",
         "gamma": TD3_PARAMS_OFFLINE["gamma"],
         "actor_learning_rate": TD3_PARAMS_OFFLINE["actor_learning_rate"],
         "critic_learning_rate": TD3_PARAMS_OFFLINE["critic_learning_rate"],

@@ -1,5 +1,5 @@
 import energym
-from utils import normalize
+from utils import normalize, MONTH, HALF_YEAR
 import registration
 import numpy as np
 import pandas as pd
@@ -20,7 +20,8 @@ def reward_function(obs):
     return reward
     
 if __name__ == "__main__":
-    steps = 50000
+    name = ""
+    steps = MONTH
     
     kp = 0.1
     ki = 0
@@ -31,8 +32,8 @@ if __name__ == "__main__":
     rewards = []
     set_points = []
     
-    for year in [2020, 2021, 2022, 2023]:
-        env = energym.make("SimpleHouseRad-v0", weather=f"aosta{year}", simulation_days=190, start_day=1, start_month=10, year=year, eval_mode=False)
+    for year in [2020]:
+        env = energym.make("SimpleHouseRad-v0", weather=f"aosta{year}", simulation_days=190, start_day=1, start_month=2, year=year, eval_mode=False)
         
         last_error = 0
         total_error = 0
@@ -43,15 +44,15 @@ if __name__ == "__main__":
         outputs = env.get_output()
         outputs['delta'] = (outputs['temRoo.T'] - 273.15) - set_point
         outputs['on'] = 0.0
-        out_list.append(outputs)
-        rewards.append(0)
+        # out_list.append(outputs)
+        # rewards.append(0)
         
         daily_timestep = 0
 
         for i in tqdm(range(steps)):
-            if daily_timestep == 84:
+            if daily_timestep == 85:
                 set_point = 20
-            elif daily_timestep == 252:
+            elif daily_timestep == 253:
                 set_point = 16
             elif daily_timestep == 288:
                 daily_timestep = 0
@@ -68,16 +69,19 @@ if __name__ == "__main__":
             control['u'] = [control_signal]
             outputs = env.step(control)
             outputs['delta'] = (outputs['temRoo.T'] - 273.15) - set_point
-            out_list.append(outputs)
-            acts.append([control_signal])
-            rewards.append(reward_function(outputs))
+            
+            outputs['on'] = control_signal
+            if i != 0:
+                out_list.append(outputs)
+                acts.append([control_signal])
+                rewards.append(reward_function(outputs))
             
             last_error = -error
             last_action = control_signal
             daily_timestep += 1
             set_points.append(set_point)
         
-        acts.append([0])
+        # acts.append([0])
         
     out_df = pd.DataFrame(out_list)
     out_df = out_df[["heaPum.P", "temSup.T", "TOut.T", "delta"]]
@@ -91,4 +95,4 @@ if __name__ == "__main__":
         'rewards': rewards,
     })
     
-    dataset.to_excel('datasets/PID_dataset_aosta.xlsx')
+    dataset.to_excel()
